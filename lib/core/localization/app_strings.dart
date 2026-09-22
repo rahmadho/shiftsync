@@ -68,8 +68,15 @@ class AppStrings {
 
     // Attendance
     'attendance': {AppLanguage.en: 'Attendance', AppLanguage.id: 'Absensi'},
+    'modeOffice': {AppLanguage.en: 'In Office', AppLanguage.id: 'Di Kantor'},
+    'modeRemote': {AppLanguage.en: 'Outside Office', AppLanguage.id: 'Luar Kantor'},
     'withinGeofence': {AppLanguage.en: 'Within geofence', AppLanguage.id: 'Dalam radius'},
     'outsideGeofence': {AppLanguage.en: 'Outside geofence', AppLanguage.id: 'Luar radius'},
+    'remoteModeActive': {AppLanguage.en: 'Remote mode active', AppLanguage.id: 'Mode luar kantor aktif'},
+    'takeSelfie': {AppLanguage.en: 'Take Selfie', AppLanguage.id: 'Ambil Selfie'},
+    'retakeSelfie': {AppLanguage.en: 'Retake', AppLanguage.id: 'Foto Ulang'},
+    'selfieRequiredMsg': {AppLanguage.en: 'Please take a selfie first to record outside office', AppLanguage.id: 'Harap ambil foto selfie terlebih dahulu untuk absen luar kantor'},
+    'notesOptional': {AppLanguage.en: 'Notes (e.g. Client Visit, WFH)', AppLanguage.id: 'Catatan (mis. Kunjungan Klien, WFH)'},
     'holdToRecord': {AppLanguage.en: 'Hold to record', AppLanguage.id: 'Tahan untuk absen'},
     'recorded': {AppLanguage.en: 'Recorded', AppLanguage.id: 'Tercatat'},
     'holdToCheckIn': {AppLanguage.en: 'Hold to Check In', AppLanguage.id: 'Tahan untuk Masuk'},
@@ -87,6 +94,10 @@ class AppStrings {
     'geoSuccessMsg': {
       AppLanguage.en: 'Success: Attendance recorded',
       AppLanguage.id: 'Berhasil: Absensi tercatat'
+    },
+    'remoteSuccessMsg': {
+      AppLanguage.en: 'Success: Remote attendance with selfie recorded',
+      AppLanguage.id: 'Berhasil: Absensi luar kantor dengan selfie tercatat'
     },
 
     // Leave Request

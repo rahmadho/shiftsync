@@ -24,6 +24,8 @@ dependencies:
   syncfusion_flutter_datepicker: ^28.1.33
   # File attachment picker (Leave Request)
   file_picker: ^8.1.7
+  # Image picker (Selfie for remote attendance)
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

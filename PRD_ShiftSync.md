@@ -233,7 +233,8 @@ lib/
   PRD → dibatalkan & dikerjakan sendiri demi akurasi: warna `#2A8CED`, 8 screen absensi, bukan scope lain).
 - [x] **8 screens** selesai: Splash, Login, Home, Attendance(+HoldToRecord), History, Statistics, Request(+date range picker), Profile.
 - [x] **Refinement & Localization**: Dual language system (English / Bahasa Indonesia) added via Riverpod `localeProvider` & `AppStrings`. Language switchers added to Login (top-right chip) and Profile screen (segmented control). Default language is English to match original Figma design. All UI strings, form validators, dates, and badges fully localized.
-- [x] **QA**: `flutter analyze` → **No issues found**. Unit test 21/21 lulus (termasuk localization & locale formatting).
+- [x] **Remote Attendance & Selfie Verification**: Added segmented toggle between In-Office and Outside-Office (Remote/Field) mode in `attendance_screen.dart`. When in Remote mode, geofence radius check is disabled, selfie camera capture (`image_picker`) is enabled, and `HoldToRecordButton` is disabled until a selfie is taken.
+- [x] **QA**: `flutter analyze` → **No issues found**. Unit test 21/21 lulus.
 - [x] **Build**: `flutter build web --release` sukses.
 - [ ] Build APK Android / iOS — butuh Android SDK + Xcode.
 

@@ -10,12 +10,16 @@ class HoldToRecordButton extends StatefulWidget {
     this.duration = const Duration(milliseconds: 1500),
     this.label,
     this.recordedLabel,
+    this.enabled = true,
+    this.onDisabledTap,
   });
 
   final VoidCallback onComplete;
   final Duration duration;
   final String? label;
   final String? recordedLabel;
+  final bool enabled;
+  final VoidCallback? onDisabledTap;
 
   @override
   State<HoldToRecordButton> createState() => _HoldToRecordButtonState();
@@ -48,11 +52,16 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
   }
 
   void _start() {
+    if (!widget.enabled) {
+      widget.onDisabledTap?.call();
+      return;
+    }
     if (_fired) return;
     _controller.forward(from: 0);
   }
 
   void _cancel() {
+    if (!widget.enabled) return;
     if (_fired) return;
     _controller.reverse();
   }
@@ -61,6 +70,9 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
   Widget build(BuildContext context) {
     final defaultLabel = widget.label ?? 'Hold to record';
     final doneLabel = widget.recordedLabel ?? 'Recorded';
+    final buttonColor = widget.enabled ? AppColors.primary : AppColors.border;
+    final iconColor = widget.enabled ? Colors.white : AppColors.textMuted;
+    final textColor = widget.enabled ? Colors.white : AppColors.textMuted;
 
     return GestureDetector(
       onTapDown: (_) => _start(),
@@ -95,29 +107,29 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
                     strokeCap: StrokeCap.round,
                     backgroundColor: Colors.transparent,
                     valueColor:
-                        const AlwaysStoppedAnimation(AppColors.primary),
+                        AlwaysStoppedAnimation(buttonColor),
                   ),
                 ),
                 Container(
                   width: 150,
                   height: 150,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                  decoration: BoxDecoration(
+                    color: buttonColor,
                     shape: BoxShape.circle,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.fingerprint,
-                          color: Colors.white, size: 40),
+                      Icon(Icons.fingerprint,
+                          color: iconColor, size: 40),
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           _fired ? doneLabel : defaultLabel,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: textColor,
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                           ),
