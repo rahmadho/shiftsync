@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shiftsync/core/localization/app_strings.dart';
+import 'package:shiftsync/core/security/location_service.dart';
+import 'package:shiftsync/core/security/security_service.dart';
 import 'package:shiftsync/core/theme/app_colors.dart';
 import 'package:shiftsync/core/utils/date_formatter.dart';
 import 'package:shiftsync/core/utils/location_utils.dart';
@@ -114,6 +116,94 @@ void main() {
       expect(h.any((a) => a.date.month == 10), isTrue);
       expect(h.any((a) => a.date.month == 9), isTrue);
       expect(h.any((a) => a.date.month == 8), isTrue);
+    });
+  });
+
+  group('IntegrityReport anti-fraud logic (Phase 1 + 2)', () {
+    test('clean device with office wifi does not block', () {
+      const r = IntegrityReport(hasOfficeWifi: true);
+      expect(r.blocksAttendance, isFalse);
+      expect(r.level, ThreatLevel.none);
+      expect(r.reasons, isEmpty);
+    });
+
+    test('mock location blocks attendance', () {
+      const r = IntegrityReport(
+          isMockLocationEnabled: true, hasOfficeWifi: true);
+      expect(r.blocksAttendance, isTrue);
+      expect(r.level, ThreatLevel.critical);
+      expect(r.reasons, contains('mockLocation'));
+    });
+
+    test('rooted device blocks attendance', () {
+      const r = IntegrityReport(isRooted: true, hasOfficeWifi: true);
+      expect(r.blocksAttendance, isTrue);
+      expect(r.reasons, contains('rooted'));
+    });
+
+    test('jailbroken device blocks attendance', () {
+      const r = IntegrityReport(isJailbroken: true, hasOfficeWifi: true);
+      expect(r.blocksAttendance, isTrue);
+      expect(r.reasons, contains('jailbroken'));
+    });
+
+    test('emulator blocks attendance', () {
+      const r = IntegrityReport(isEmulator: true, hasOfficeWifi: true);
+      expect(r.blocksAttendance, isTrue);
+      expect(r.reasons, contains('emulator'));
+    });
+
+    test('no office wifi is a warning, not a block', () {
+      const r = IntegrityReport(hasOfficeWifi: false);
+      expect(r.blocksAttendance, isFalse);
+      expect(r.level, ThreatLevel.warning);
+      expect(r.reasons, contains('noOfficeWifi'));
+    });
+
+    test('developer mode is a warning only', () {
+      const r = IntegrityReport(hasOfficeWifi: true, developerMode: true);
+      expect(r.blocksAttendance, isFalse);
+      expect(r.level, ThreatLevel.warning);
+    });
+  });
+
+  group('GeoReading trust logic (Phase 1, PRD 7.2)', () {
+    test('successful non-mocked reading is trusted', () {
+      const r = GeoReading(
+        status: LocationStatus.success,
+        latitude: LocationUtils.officeLat,
+        longitude: LocationUtils.officeLng,
+        isInside: true,
+      );
+      expect(r.hasFix, isTrue);
+      expect(r.isTrusted, isTrue);
+    });
+
+    test('mocked reading is NOT trusted', () {
+      const r = GeoReading(status: LocationStatus.success, isMocked: true);
+      expect(r.isTrusted, isFalse);
+    });
+
+    test('permission denied has no fix', () {
+      const r = GeoReading(status: LocationStatus.permissionDenied);
+      expect(r.hasFix, isFalse);
+      expect(r.isTrusted, isFalse);
+    });
+  });
+
+  group('Security localization strings', () {
+    test('security strings exist in both languages', () {
+      for (final key in [
+        'secMockLocation',
+        'secRooted',
+        'secJailbroken',
+        'secEmulator',
+        'secNoOfficeWifi',
+        'secVerified',
+      ]) {
+        expect(AppStrings.tr(key, AppLanguage.en), isNot(key));
+        expect(AppStrings.tr(key, AppLanguage.id), isNot(key));
+      }
     });
   });
 

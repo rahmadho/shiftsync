@@ -45,5 +45,18 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Anti-fraud: location per PRD 7.2 -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ShiftSync uses your location to verify you are within the office geofence when recording attendance.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>ShiftSync uses your location to verify attendance. We never track you in the background.</string>
+	<!-- Selfie capture for remote attendance -->
+	<key>NSCameraUsageDescription</key>
+	<string>ShiftSync uses the camera to capture a selfie for remote attendance verification.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ShiftSync needs photo access to attach a selfie or supporting document.</string>
+	<!-- Phase 2: reading Wi-Fi SSID/BSSID for the office-network check -->
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>ShiftSync reads the Wi-Fi network name to confirm you are at the office.</string>
 </dict>
 </plist>

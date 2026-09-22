@@ -1,23 +1,32 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/constants/app_sizes.dart';
 import '../../core/localization/app_strings.dart';
+import '../../core/security/location_service.dart';
+import '../../core/security/security_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../core/utils/location_utils.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/data_providers.dart';
+import '../../providers/security_provider.dart';
 import '../../widgets/app_card.dart';
 import 'hold_to_record_button.dart';
 
 enum AttendanceMode { office, remote }
 
 /// S4 — Attendance (active check-in with Office & Remote modes).
+///
+/// Anti-fraud:
+///  * Phase 1 — real GPS via `geolocator`, blocks `Position.isMocked`.
+///  * Phase 2 — root/jailbreak/emulator detection + office-WiFi (BSSID) check.
+///
+/// On unsupported platforms (web) the screen falls back to a simulation so the
+/// UI remains demoable; the security gate is bypassed only in that case.
 class AttendanceScreen extends ConsumerStatefulWidget {
   const AttendanceScreen({super.key});
 
@@ -32,18 +41,39 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   Uint8List? _selfieBytes;
   final _notesCtrl = TextEditingController();
 
-  static const _insideLat = -0.9373786051614612 + 0.00027; // ~30 m
-  static const _insideLng = 100.36028655141162;
-  static const _outsideLat = -0.9373786051614612 + 0.00225; // ~250 m
-  static const _outsideLng = 100.36028655141162;
+  GeoReading? _geo;
+  bool _locating = false;
 
-  double get _curLat => _simulateInside ? _insideLat : _outsideLat;
-  double get _curLng => _simulateInside ? _insideLng : _outsideLng;
+  // Simulation fallback (web / desktop demo only).
+  static const _insideLat = LocationUtils.officeLat + 0.00027; // ~30 m
+  static const _insideLng = LocationUtils.officeLng;
+  static const _outsideLat = LocationUtils.officeLat + 0.00225; // ~250 m
+  static const _outsideLng = LocationUtils.officeLng;
+
+  /// Real device GPS is used on mobile; simulation only on web.
+  bool get _useRealGps => !kIsWeb;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshGeo());
+  }
 
   @override
   void dispose() {
     _notesCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshGeo() async {
+    if (!_useRealGps) return;
+    setState(() => _locating = true);
+    final reading = await LocationService.instance.getCurrent();
+    if (!mounted) return;
+    setState(() {
+      _geo = reading;
+      _locating = false;
+    });
   }
 
   Future<void> _takeSelfie() async {
@@ -82,54 +112,108 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     }
   }
 
-  void _onRecorded() {
-    final now = DateTime.now();
-    final notifier = ref.read(todayAttendanceProvider.notifier);
-    final today = ref.read(todayAttendanceProvider);
+  /// Human-readable security reason for the current integrity report.
+  String _integrityReason(IntegrityReport r) {
+    if (r.isMockLocationEnabled) return ref.tr('secMockLocation');
+    if (r.isRooted) return ref.tr('secRooted');
+    if (r.isJailbroken) return ref.tr('secJailbroken');
+    if (r.isEmulator) return ref.tr('secEmulator');
+    if (!r.hasOfficeWifi) return ref.tr('secNoOfficeWifi');
+    return '';
+  }
 
-    // Office mode validation
+  void _snack(String msg, {Color? color}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(backgroundColor: color, content: Text(msg)),
+    );
+  }
+
+  Future<void> _onRecorded() async {
+    final today = ref.read(todayAttendanceProvider);
+    final notifier = ref.read(todayAttendanceProvider.notifier);
+
+    // ---- Phase 2: device & network integrity gate ----
+    final integrity = ref.read(integrityProvider).valueOrNull;
+    if (integrity != null && integrity.blocksAttendance) {
+      _snack(_integrityReason(integrity), color: AppColors.absentFg);
+      return;
+    }
+
+    double? distance;
     if (_mode == AttendanceMode.office) {
-      final geo = LocationUtils.check(_curLat, _curLng);
-      if (!geo.isInside) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.absentFg,
-            content: Text(
-              '${ref.tr('geoFailMsg')} (${LocationUtils.formatDistance(geo.distanceMeters)}, '
-              'max ${LocationUtils.radiusMeters.round()} m).',
-            ),
-          ),
+      if (_useRealGps) {
+        // ---- Phase 1: real GPS + mock-location detection ----
+        setState(() => _locating = true);
+        final reading = await LocationService.instance.getCurrent();
+        if (!mounted) return;
+        setState(() {
+          _geo = reading;
+          _locating = false;
+        });
+
+        if (reading.status != LocationStatus.success) {
+          final msg = switch (reading.status) {
+            LocationStatus.serviceDisabled => ref.tr('secGpsOff'),
+            LocationStatus.permissionDenied ||
+            LocationStatus.permissionDeniedForever =>
+              ref.tr('secPermDenied'),
+            _ => ref.tr('secLocatingFailed'),
+          };
+          _snack(msg, color: AppColors.absentFg);
+          return;
+        }
+        if (reading.isMocked) {
+          _snack(ref.tr('secMockLocation'), color: AppColors.absentFg);
+          return;
+        }
+        if (!reading.isInside) {
+          _snack(
+            '${ref.tr('geoFailMsg')} '
+            '(${LocationUtils.formatDistance(reading.distanceMeters ?? 0)}, '
+            'max ${LocationUtils.radiusMeters.round()} m).',
+            color: AppColors.absentFg,
+          );
+          return;
+        }
+        distance = reading.distanceMeters;
+      } else {
+        // Simulation fallback (web demo).
+        final geo = LocationUtils.check(
+          _simulateInside ? _insideLat : _outsideLat,
+          _simulateInside ? _insideLng : _outsideLng,
         );
-        return;
+        if (!geo.isInside) {
+          _snack(
+            '${ref.tr('geoFailMsg')} '
+            '(${LocationUtils.formatDistance(geo.distanceMeters)}, '
+            'max ${LocationUtils.radiusMeters.round()} m).',
+            color: AppColors.absentFg,
+          );
+          return;
+        }
+        distance = geo.distanceMeters;
       }
     } else {
-      // Remote mode validation: must have selfie
+      // Remote mode: selfie required.
       if (_selfieBytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.absentFg,
-            content: Text(ref.tr('selfieRequiredMsg')),
-          ),
-        );
+        _snack(ref.tr('selfieRequiredMsg'), color: AppColors.absentFg);
         return;
       }
     }
 
+    final now = DateTime.now();
     if (!today.hasCheckedIn) {
       notifier.checkIn(now);
     } else if (!today.hasCheckedOut) {
       notifier.checkOut(now);
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.approvedFg,
-        content: Text(
-          _mode == AttendanceMode.office
-              ? '${ref.tr('geoSuccessMsg')} (${LocationUtils.formatDistance(LocationUtils.check(_curLat, _curLng).distanceMeters)}).'
-              : ref.tr('remoteSuccessMsg'),
-        ),
-      ),
+    _snack(
+      _mode == AttendanceMode.office
+          ? '${ref.tr('geoSuccessMsg')} '
+              '(${LocationUtils.formatDistance(distance ?? 0)}).'
+          : ref.tr('remoteSuccessMsg'),
+      color: AppColors.approvedFg,
     );
   }
 
@@ -138,11 +222,28 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     final shift = ref.watch(upcomingShiftProvider);
     final today = ref.watch(todayAttendanceProvider);
     final now = ref.watch(clockProvider).value ?? DateTime.now();
-    final geo = LocationUtils.check(_curLat, _curLng);
     final lang = ref.watch(localeProvider);
+    final integrityAsync = ref.watch(integrityProvider);
+    final integrity = integrityAsync.valueOrNull;
 
     final isRemote = _mode == AttendanceMode.remote;
-    final canRecord = !isRemote || _selfieBytes != null;
+
+    // Geofence info display.
+    final GeofenceResult? geo = _useRealGps
+        ? (_geo != null && _geo!.status == LocationStatus.success
+            ? GeofenceResult(
+                distanceMeters: _geo!.distanceMeters ?? 0,
+                isInside: _geo!.isInside,
+              )
+            : null)
+        : LocationUtils.check(
+            _simulateInside ? _insideLat : _outsideLat,
+            _simulateInside ? _insideLng : _outsideLng,
+          );
+
+    final securityBlocked = integrity?.blocksAttendance ?? false;
+    final selfieReady = !isRemote || _selfieBytes != null;
+    final canRecord = selfieReady && !securityBlocked && !_locating;
 
     final holdLabel = today.hasCheckedOut
         ? ref.tr('attendanceDoneToday')
@@ -154,7 +255,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       appBar: AppBar(
         title: Text(ref.tr('attendance')),
         actions: [
-          if (!isRemote)
+          IconButton(
+            tooltip: ref.tr('securityCheck'),
+            onPressed: () =>
+                ref.read(integrityProvider.notifier).refresh().then((_) {
+              if (_useRealGps) _refreshGeo();
+            }),
+            icon: const Icon(Icons.refresh),
+          ),
+          if (!isRemote && !_useRealGps)
             Row(
               children: [
                 Text(_simulateInside ? 'In' : 'Out',
@@ -197,13 +306,50 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     visualDensity: VisualDensity.comfortable,
                     shape: WidgetStatePropertyAll(
                       RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.radiusButton),
+                        borderRadius:
+                            BorderRadius.circular(AppSizes.radiusButton),
                       ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
+
+              // ---- Security banner (Phase 1 + 2 status) ----
+              if (integrityAsync.isLoading)
+                _Banner(
+                  color: AppColors.background,
+                  icon: Icons.shield_outlined,
+                  iconColor: AppColors.textMuted,
+                  text: ref.tr('secWaitLocating'),
+                  trailing: const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (securityBlocked)
+                _Banner(
+                  color: AppColors.absentBg,
+                  icon: Icons.gpp_bad_outlined,
+                  iconColor: AppColors.absentFg,
+                  text: _integrityReason(integrity!),
+                )
+              else if (integrity != null && !integrity.hasOfficeWifi && !isRemote)
+                _Banner(
+                  color: AppColors.lateBg,
+                  icon: Icons.wifi_off,
+                  iconColor: AppColors.lateFg,
+                  text: ref.tr('secNoOfficeWifi'),
+                )
+              else if (integrity != null)
+                _Banner(
+                  color: AppColors.approvedBg,
+                  icon: Icons.verified_user,
+                  iconColor: AppColors.approvedFg,
+                  text: ref.tr('secVerified'),
+                ),
+              const SizedBox(height: 12),
 
               Row(
                 children: [
@@ -238,41 +384,62 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: geo.isInside
-                        ? AppColors.approvedBg
-                        : AppColors.absentBg,
+                    color: geo == null
+                        ? AppColors.background
+                        : geo.isInside
+                            ? AppColors.approvedBg
+                            : AppColors.absentBg,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        geo.isInside
-                            ? Icons.check_circle
-                            : Icons.error_outline,
-                        size: 14,
-                        color: geo.isInside
-                            ? AppColors.approvedFg
-                            : AppColors.absentFg,
-                      ),
+                      if (_locating)
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        Icon(
+                          geo == null
+                              ? Icons.location_searching
+                              : geo.isInside
+                                  ? Icons.check_circle
+                                  : Icons.error_outline,
+                          size: 14,
+                          color: geo == null
+                              ? AppColors.textMuted
+                              : geo.isInside
+                                  ? AppColors.approvedFg
+                                  : AppColors.absentFg,
+                        ),
                       const SizedBox(width: 6),
                       Text(
-                        geo.isInside
-                            ? ref.tr('withinGeofence')
-                            : ref.tr('outsideGeofence'),
+                        _locating
+                            ? ref.tr('secWaitLocating')
+                            : geo == null
+                                ? ref.tr('secLocatingFailed')
+                                : geo.isInside
+                                    ? ref.tr('withinGeofence')
+                                    : ref.tr('outsideGeofence'),
                         style: AppTextStyles.caption.copyWith(
-                          color: geo.isInside
-                              ? AppColors.approvedFg
-                              : AppColors.absentFg,
+                          color: geo == null || _locating
+                              ? AppColors.textMuted
+                              : geo.isInside
+                                  ? AppColors.approvedFg
+                                  : AppColors.absentFg,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${LocationUtils.formatDistance(geo.distanceMeters)} '
-                        '/ ${LocationUtils.radiusMeters.round()} m',
-                        style: AppTextStyles.caption,
-                      ),
+                      if (geo != null && !_locating) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '${LocationUtils.formatDistance(geo.distanceMeters)} '
+                          '/ ${LocationUtils.radiusMeters.round()} m',
+                          style: AppTextStyles.caption,
+                        ),
+                      ],
                     ],
                   ),
                 )
@@ -379,8 +546,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         controller: _notesCtrl,
                         decoration: InputDecoration(
                           hintText: ref.tr('notesOptional'),
-                          prefixIcon:
-                              const Icon(Icons.edit_note, size: 20),
+                          prefixIcon: const Icon(Icons.edit_note, size: 20),
                           isDense: true,
                         ),
                       ),
@@ -396,12 +562,13 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 label: ref.tr('holdToRecord'),
                 recordedLabel: ref.tr('recorded'),
                 onDisabledTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: AppColors.absentFg,
-                      content: Text(ref.tr('selfieRequiredMsg')),
-                    ),
-                  );
+                  if (securityBlocked) {
+                    _snack(_integrityReason(integrity!),
+                        color: AppColors.absentFg);
+                  } else {
+                    _snack(ref.tr('selfieRequiredMsg'),
+                        color: AppColors.absentFg);
+                  }
                 },
               ),
               const SizedBox(height: 12),
@@ -439,7 +606,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               AppCard(
                 child: Row(
                   children: [
-                    const Icon(Icons.schedule, color: AppColors.primary, size: 20),
+                    const Icon(Icons.schedule,
+                        color: AppColors.primary, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -464,6 +632,50 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Banner extends StatelessWidget {
+  const _Banner({
+    required this.color,
+    required this.icon,
+    required this.iconColor,
+    required this.text,
+    this.trailing,
+  });
+
+  final Color color;
+  final IconData icon;
+  final Color iconColor;
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: iconColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.caption.copyWith(
+                color: iconColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
       ),
     );
   }

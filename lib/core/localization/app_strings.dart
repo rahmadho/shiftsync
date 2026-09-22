@@ -99,6 +99,41 @@ class AppStrings {
       AppLanguage.en: 'Success: Remote attendance with selfie recorded',
       AppLanguage.id: 'Berhasil: Absensi luar kantor dengan selfie tercatat'
     },
+    // Security / anti-fraud
+    'securityCheck': {AppLanguage.en: 'Security Check', AppLanguage.id: 'Pemeriksaan Keamanan'},
+    'secVerified': {AppLanguage.en: 'Device verified', AppLanguage.id: 'Perangkat terverifikasi'},
+    'secMockLocation': {
+      AppLanguage.en: 'Fake GPS detected. Turn off mock location to record attendance.',
+      AppLanguage.id: 'Fake GPS terdeteksi. Matikan mock location untuk absen.'
+    },
+    'secRooted': {
+      AppLanguage.en: 'This device is rooted. Attendance is blocked for security.',
+      AppLanguage.id: 'Perangkat ini ter-root. Absensi diblokir demi keamanan.'
+    },
+    'secJailbroken': {
+      AppLanguage.en: 'This device is jailbroken. Attendance is blocked for security.',
+      AppLanguage.id: 'Perangkat ini di-jailbreak. Absensi diblokir demi keamanan.'
+    },
+    'secEmulator': {
+      AppLanguage.en: 'Emulator detected. Attendance is only allowed on real devices.',
+      AppLanguage.id: 'Emulator terdeteksi. Absensi hanya diizinkan di perangkat asli.'
+    },
+    'secNoOfficeWifi': {
+      AppLanguage.en: 'You are not connected to the office Wi-Fi network.',
+      AppLanguage.id: 'Anda tidak terhubung ke jaringan Wi-Fi kantor.'
+    },
+    'secWifiOk': {AppLanguage.en: 'Office network found', AppLanguage.id: 'Jaringan kantor terdeteksi'},
+    'secGpsOff': {
+      AppLanguage.en: 'Location services are off. Please enable GPS.',
+      AppLanguage.id: 'Layanan lokasi mati. Aktifkan GPS.'
+    },
+    'secPermDenied': {
+      AppLanguage.en: 'Location permission denied. Grant it in Settings.',
+      AppLanguage.id: 'Izin lokasi ditolak. Berikan izin di Pengaturan.'
+    },
+    'secOpenSettings': {AppLanguage.en: 'Open Settings', AppLanguage.id: 'Buka Pengaturan'},
+    'secWaitLocating': {AppLanguage.en: 'Getting your location…', AppLanguage.id: 'Mengambil lokasi Anda…'},
+    'secLocatingFailed': {AppLanguage.en: 'Could not get location', AppLanguage.id: 'Gagal mengambil lokasi'},
 
     // Leave Request
     'leaveRequest': {AppLanguage.en: 'Leave Request', AppLanguage.id: 'Pengajuan Cuti'},
