@@ -48,6 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final lang = ref.watch(localeProvider);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           Container(
@@ -93,21 +94,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               color: Colors.white, size: 30),
                         ),
                         // Language switcher button
-                        ActionChip(
-                          avatar: const Icon(Icons.language, size: 16, color: Colors.white),
-                          label: Text(
-                            lang == AppLanguage.en ? 'EN' : 'ID',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          backgroundColor: Colors.white.withValues(alpha: .2),
-                          side: BorderSide.none,
-                          onPressed: () {
+                        InkWell(
+                          onTap: () {
                             ref.read(localeProvider.notifier).toggleLanguage();
                           },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: .1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.language,
+                                    size: 16, color: AppColors.primary),
+                                const SizedBox(width: 6),
+                                Text(
+                                  lang == AppLanguage.en ? 'EN' : 'ID',
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
