@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_sizes.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
@@ -42,6 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final shift = ref.watch(upcomingShiftProvider);
     final summary = ref.watch(attendanceSummaryProvider);
+    final lang = ref.watch(localeProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -55,7 +57,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ---------- Header with avatar ----------
               Row(
                 children: [
-                  // Avatar
                   Container(
                     padding: const EdgeInsets.all(2),
                     decoration: const BoxDecoration(
@@ -74,11 +75,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Hello, ${MockData.homeUserName}',
+                        Text('${ref.tr('hello')}, ${MockData.homeUserName}',
                             style: AppTextStyles.h2),
                         const SizedBox(height: 2),
                         Text(
-                          AppDateFormatter.clockLine(_now),
+                          AppDateFormatter.clockLine(_now, lang),
                           style: AppTextStyles.bodySm,
                         ),
                       ],
@@ -98,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ---------- Upcoming shift (2 rows: blue top + white bottom) ----------
+              // ---------- Upcoming shift card ----------
               _UpcomingShiftCard(shift: shift),
               const SizedBox(height: 16),
 
@@ -115,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               backgroundColor: AppColors.primary,
                             ),
                             icon: const Icon(Icons.login, size: 18),
-                            label: const Text('Check In'),
+                            label: Text(ref.tr('checkIn')),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -132,7 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                             ),
                             icon: const Icon(Icons.logout, size: 18),
-                            label: const Text('Check Out'),
+                            label: Text(ref.tr('checkOut')),
                           ),
                         ),
                       ],
@@ -144,10 +145,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Icon(Icons.location_on_outlined,
                             size: 14, color: AppColors.approvedFg),
                         const SizedBox(width: 4),
-                        Text(
-                          'You are currently within the geolocation range.',
-                          style: AppTextStyles.caption
-                              .copyWith(color: AppColors.approvedFg),
+                        Flexible(
+                          child: Text(
+                            ref.tr('withinGeofenceMsg'),
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.approvedFg),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ],
                     ),
@@ -160,11 +164,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Monthly Overview', style: AppTextStyles.h2),
+                  Text(ref.tr('monthlyOverview'), style: AppTextStyles.h2),
                   TextButton(
                     onPressed: () => context.go('/history'),
-                    child: const Text('View All',
-                        style: TextStyle(color: AppColors.primary)),
+                    child: Text(ref.tr('viewAll'),
+                        style: const TextStyle(color: AppColors.primary)),
                   ),
                 ],
               ),
@@ -173,19 +177,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   _StatTile(
                       value: '${summary.present}',
-                      label: 'Present',
+                      label: ref.tr('present'),
                       icon: Icons.check_circle_outline,
                       color: AppColors.primary),
                   const SizedBox(width: 12),
                   _StatTile(
                       value: '${summary.late}',
-                      label: 'Late',
+                      label: ref.tr('late'),
                       icon: Icons.access_time,
                       color: AppColors.lateFg),
                   const SizedBox(width: 12),
                   _StatTile(
                       value: '${summary.absent}',
-                      label: 'Absent',
+                      label: ref.tr('absent'),
                       icon: Icons.cancel_outlined,
                       color: AppColors.absentFg),
                 ],
@@ -198,14 +202,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Upcoming shift card: blue row (label) + white row (time, location, ON TIME).
-class _UpcomingShiftCard extends StatelessWidget {
+class _UpcomingShiftCard extends ConsumerWidget {
   const _UpcomingShiftCard({required this.shift});
 
   final dynamic shift;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppSizes.radiusCard),
@@ -219,7 +222,6 @@ class _UpcomingShiftCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Row 1 — blue: upcoming shift info
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -234,7 +236,7 @@ class _UpcomingShiftCard extends StatelessWidget {
                 Icon(Icons.schedule,
                     size: 16, color: Colors.white.withValues(alpha: .85)),
                 const SizedBox(width: 6),
-                Text('UPCOMING SHIFT',
+                Text(ref.tr('upcomingShift'),
                     style: AppTextStyles.caption.copyWith(
                       color: Colors.white.withValues(alpha: .85),
                       letterSpacing: 1,
@@ -246,7 +248,6 @@ class _UpcomingShiftCard extends StatelessWidget {
               ],
             ),
           ),
-          // Row 2 — white: time, location, ON TIME badge
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -289,7 +290,6 @@ class _UpcomingShiftCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // ON TIME badge — now in the shift card, not the button card
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -297,8 +297,8 @@ class _UpcomingShiftCard extends StatelessWidget {
                     color: AppColors.approvedBg,
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Text('ON TIME',
-                      style: TextStyle(
+                  child: Text(ref.tr('statusOnTime').toUpperCase(),
+                      style: const TextStyle(
                         color: AppColors.approvedFg,
                         fontWeight: FontWeight.w700,
                         fontSize: 12,

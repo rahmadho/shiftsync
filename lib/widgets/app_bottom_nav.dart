@@ -1,40 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/localization/app_strings.dart';
 import '../core/theme/app_colors.dart';
 
-/// Bottom navigation shell for the 4 main tabs:
-/// Home · Request · History · Profile
-class MainScaffold extends StatelessWidget {
+/// Bottom navigation shell for the 4 main tabs
+class MainScaffold extends ConsumerWidget {
   const MainScaffold({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  static const _destinations = [
-    NavigationDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home),
-      label: 'Home',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.edit_document),
-      selectedIcon: Icon(Icons.edit_document),
-      label: 'Request',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.history_outlined),
-      selectedIcon: Icon(Icons.history),
-      label: 'History',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.person_outline),
-      selectedIcon: Icon(Icons.person),
-      label: 'Profile',
-    ),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final destinations = [
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: ref.tr('navHome'),
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.edit_document),
+        selectedIcon: const Icon(Icons.edit_document),
+        label: ref.tr('navRequest'),
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.history_outlined),
+        selectedIcon: const Icon(Icons.history),
+        label: ref.tr('navHistory'),
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.person_outline),
+        selectedIcon: const Icon(Icons.person),
+        label: ref.tr('navProfile'),
+      ),
+    ];
+
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Container(
@@ -48,7 +49,7 @@ class MainScaffold extends StatelessWidget {
             i,
             initialLocation: i == navigationShell.currentIndex,
           ),
-          destinations: _destinations,
+          destinations: destinations,
         ),
       ),
     );

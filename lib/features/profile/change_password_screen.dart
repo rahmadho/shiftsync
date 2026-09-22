@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_sizes.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/validators.dart';
 import '../../widgets/primary_button.dart';
 
 /// Change Password screen (from Profile).
-class ChangePasswordScreen extends StatefulWidget {
+class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
 
   @override
-  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+  ConsumerState<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _currentCtrl = TextEditingController();
   final _newCtrl = TextEditingController();
@@ -40,9 +42,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         backgroundColor: AppColors.approvedFg,
-        content: Text('Password berhasil diubah'),
+        content: Text(ref.tr('passwordChangedSuccess')),
       ),
     );
     context.pop();
@@ -50,8 +52,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localeProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Change Password')),
+      appBar: AppBar(title: Text(ref.tr('changePassword'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSizes.screenPadding),
@@ -60,19 +64,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Masukkan password saat ini lalu password baru Anda.',
+                Text(
+                  ref.tr('changePasswordDesc'),
                   style: AppTextStyles.bodySm,
                 ),
                 const SizedBox(height: 24),
 
-                const Text('Password Saat Ini', style: AppTextStyles.label),
+                Text(ref.tr('currentPassword'), style: AppTextStyles.label),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _currentCtrl,
                   obscureText: _obscureCur,
                   decoration: InputDecoration(
-                    hintText: 'Masukkan password saat ini',
+                    hintText: ref.tr('currentPasswordHint'),
                     prefixIcon: const Icon(Icons.lock_outline, size: 20),
                     suffixIcon: IconButton(
                       icon: Icon(_obscureCur
@@ -82,17 +86,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           setState(() => _obscureCur = !_obscureCur),
                     ),
                   ),
-                  validator: (v) => Validators.password(v),
+                  validator: (v) => Validators.password(v, lang: lang),
                 ),
                 const SizedBox(height: 16),
 
-                const Text('Password Baru', style: AppTextStyles.label),
+                Text(ref.tr('newPassword'), style: AppTextStyles.label),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _newCtrl,
                   obscureText: _obscureNew,
                   decoration: InputDecoration(
-                    hintText: 'Minimal 6 karakter',
+                    hintText: ref.tr('newPasswordHint'),
                     prefixIcon: const Icon(Icons.lock_reset, size: 20),
                     suffixIcon: IconButton(
                       icon: Icon(_obscureNew
@@ -102,18 +106,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           setState(() => _obscureNew = !_obscureNew),
                     ),
                   ),
-                  validator: (v) => Validators.password(v),
+                  validator: (v) => Validators.password(v, lang: lang),
                 ),
                 const SizedBox(height: 16),
 
-                const Text('Konfirmasi Password Baru',
+                Text(ref.tr('confirmNewPassword'),
                     style: AppTextStyles.label),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _confirmCtrl,
                   obscureText: _obscureConf,
                   decoration: InputDecoration(
-                    hintText: 'Ulangi password baru',
+                    hintText: ref.tr('confirmNewPasswordHint'),
                     prefixIcon: const Icon(Icons.check_circle_outline, size: 20),
                     suffixIcon: IconButton(
                       icon: Icon(_obscureConf
@@ -124,17 +128,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                   ),
                   validator: (v) {
-                    final base = Validators.password(v);
+                    final base = Validators.password(v, lang: lang);
                     if (base != null) return base;
                     if (v != _newCtrl.text) {
-                      return 'Konfirmasi password tidak cocok';
+                      return ref.tr('passwordsDoNotMatch');
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 28),
                 PrimaryButton(
-                  label: 'Simpan Password',
+                  label: ref.tr('savePassword'),
                   loading: _loading,
                   onPressed: _submit,
                 ),

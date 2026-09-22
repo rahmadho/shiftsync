@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_sizes.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
@@ -11,10 +12,7 @@ import '../../providers/data_providers.dart';
 import '../../widgets/app_card.dart';
 import 'hold_to_record_button.dart';
 
-/// S4 — Attendance (active check-in). Opened from Home.
-///
-/// Note: real GPS is not wired yet. A simulated current position is used so the
-/// geofence logic (100 m radius around the office point) can be demonstrated.
+/// S4 — Attendance (active check-in).
 class AttendanceScreen extends ConsumerStatefulWidget {
   const AttendanceScreen({super.key});
 
@@ -23,14 +21,11 @@ class AttendanceScreen extends ConsumerStatefulWidget {
 }
 
 class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
-  // Simulated device position. Toggle via the switch in the app bar:
-  // inside  -> ~30 m from office (within radius)
-  // outside -> ~250 m from office (outside radius)
   bool _simulateInside = true;
 
-  static const _insideLat = -0.9373786051614612 + 0.00027; // ~30 m north
+  static const _insideLat = -0.9373786051614612 + 0.00027; // ~30 m
   static const _insideLng = 100.36028655141162;
-  static const _outsideLat = -0.9373786051614612 + 0.00225; // ~250 m north
+  static const _outsideLat = -0.9373786051614612 + 0.00225; // ~250 m
   static const _outsideLng = 100.36028655141162;
 
   double get _curLat => _simulateInside ? _insideLat : _outsideLat;
@@ -43,20 +38,18 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     final today = ref.read(todayAttendanceProvider);
 
     if (!geo.isInside) {
-      // Outside radius -> FAILED
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.absentFg,
           content: Text(
-            'Gagal: Anda di luar radius (${LocationUtils.formatDistance(geo.distanceMeters)} '
-            'dari titik absen, maks ${LocationUtils.radiusMeters.round()} m).',
+            '${ref.tr('geoFailMsg')} (${LocationUtils.formatDistance(geo.distanceMeters)}, '
+            'max ${LocationUtils.radiusMeters.round()} m).',
           ),
         ),
       );
       return;
     }
 
-    // Inside radius -> SUCCESS
     if (!today.hasCheckedIn) {
       notifier.checkIn(now);
     } else if (!today.hasCheckedOut) {
@@ -66,8 +59,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       SnackBar(
         backgroundColor: AppColors.approvedFg,
         content: Text(
-          'Berhasil: absen tercatat (${LocationUtils.formatDistance(geo.distanceMeters)} '
-          'dalam radius).',
+          '${ref.tr('geoSuccessMsg')} (${LocationUtils.formatDistance(geo.distanceMeters)}).',
         ),
       ),
     );
@@ -77,15 +69,20 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   Widget build(BuildContext context) {
     final shift = ref.watch(upcomingShiftProvider);
     final today = ref.watch(todayAttendanceProvider);
-    // Live clock following the device.
     final now = ref.watch(clockProvider).value ?? DateTime.now();
     final geo = LocationUtils.check(_curLat, _curLng);
+    final lang = ref.watch(localeProvider);
+
+    final holdLabel = today.hasCheckedOut
+        ? ref.tr('attendanceDoneToday')
+        : today.hasCheckedIn
+            ? ref.tr('holdToCheckOut')
+            : ref.tr('holdToCheckIn');
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attendance'),
+        title: Text(ref.tr('attendance')),
         actions: [
-          // Demo switch to simulate being inside/outside the geofence.
           Row(
             children: [
               Text(_simulateInside ? 'In' : 'Out',
@@ -104,7 +101,6 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           padding: const EdgeInsets.all(AppSizes.screenPadding),
           child: Column(
             children: [
-              // Location header
               Row(
                 children: [
                   const Icon(Icons.location_on,
@@ -112,13 +108,12 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   const SizedBox(width: 6),
                   const Text('Headquarters', style: AppTextStyles.bodySm),
                   const Spacer(),
-                  Text(AppDateFormatter.dayMonth(now),
+                  Text(AppDateFormatter.dayMonth(now, lang),
                       style: AppTextStyles.bodySm),
                 ],
               ),
               const SizedBox(height: 24),
 
-              // Live ticking clock (follows device time)
               Text(AppDateFormatter.hhmmAmPm(now),
                   style: AppTextStyles.display.copyWith(fontSize: 44)),
               const SizedBox(height: 8),
@@ -126,7 +121,6 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   style: AppTextStyles.bodySm),
               const SizedBox(height: 8),
 
-              // Geofence status + distance
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -150,7 +144,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      geo.isInside ? 'Within geofence' : 'Outside geofence',
+                      geo.isInside ? ref.tr('withinGeofence') : ref.tr('outsideGeofence'),
                       style: AppTextStyles.caption.copyWith(
                         color: geo.isInside
                             ? AppColors.approvedFg
@@ -169,44 +163,43 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Hold to record
-              HoldToRecordButton(onComplete: _onRecorded),
+              HoldToRecordButton(
+                onComplete: _onRecorded,
+                label: ref.tr('holdToRecord'),
+                recordedLabel: ref.tr('recorded'),
+              ),
               const SizedBox(height: 12),
               Text(
-                today.hasCheckedOut
-                    ? 'Absen hari ini selesai'
-                    : today.hasCheckedIn
-                        ? 'Hold untuk Check Out'
-                        : 'Hold untuk Check In',
+                holdLabel,
                 style: AppTextStyles.bodySm,
               ),
               const SizedBox(height: 32),
 
-              // Two cards: today's check-in (left) & check-out (right)
               Row(
                 children: [
                   Expanded(
                     child: _TimeCard(
-                      label: 'CHECK IN',
+                      label: ref.tr('labelCheckIn'),
                       icon: Icons.login,
                       time: today.checkInAt,
                       color: AppColors.primary,
+                      emptyLabel: ref.tr('notCheckedInYet'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _TimeCard(
-                      label: 'CHECK OUT',
+                      label: ref.tr('labelCheckOut'),
                       icon: Icons.logout,
                       time: today.checkOutAt,
                       color: AppColors.lateFg,
+                      emptyLabel: ref.tr('notCheckedInYet'),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
 
-              // Shift info
               AppCard(
                 child: Row(
                   children: [
@@ -216,14 +209,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('SHIFT',
+                          Text(ref.tr('shift'),
                               style: AppTextStyles.caption
                                   .copyWith(letterSpacing: 1)),
                           const SizedBox(height: 4),
                           Text(
                             '${AppDateFormatter.hhmm(shift.startAt)} - '
                             '${AppDateFormatter.hhmm(shift.endAt)}  ·  '
-                            'Standard Shift',
+                            '${ref.tr('standardShift')}',
                             style: AppTextStyles.label,
                           ),
                         ],
@@ -246,12 +239,14 @@ class _TimeCard extends StatelessWidget {
     required this.icon,
     required this.time,
     required this.color,
+    required this.emptyLabel,
   });
 
   final String label;
   final IconData icon;
   final DateTime? time;
   final Color color;
+  final String emptyLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +268,7 @@ class _TimeCard extends StatelessWidget {
             style: AppTextStyles.h1.copyWith(fontSize: 24),
           ),
           const SizedBox(height: 2),
-          Text(time != null ? AppDateFormatter.hhmmAmPm(time!) : 'Belum absen',
+          Text(time != null ? AppDateFormatter.hhmmAmPm(time!) : emptyLabel,
               style: AppTextStyles.caption),
         ],
       ),

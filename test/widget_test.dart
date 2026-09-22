@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:shiftsync/core/localization/app_strings.dart';
 import 'package:shiftsync/core/theme/app_colors.dart';
 import 'package:shiftsync/core/utils/date_formatter.dart';
 import 'package:shiftsync/core/utils/location_utils.dart';
@@ -7,8 +9,34 @@ import 'package:shiftsync/core/utils/validators.dart';
 import 'package:shiftsync/data/mock/mock_data.dart';
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('id_ID', null);
+    await initializeDateFormatting('en_US', null);
+  });
+  group('Localization AppStrings', () {
+    test('tr returns english by default', () {
+      expect(AppStrings.tr('welcomeBack', AppLanguage.en), 'Welcome Back');
+      expect(AppStrings.tr('navHome', AppLanguage.en), 'Home');
+      expect(AppStrings.tr('holdToRecord', AppLanguage.en), 'Hold to record');
+    });
+
+    test('tr returns indonesian correctly', () {
+      expect(AppStrings.tr('welcomeBack', AppLanguage.id), 'Selamat Datang Kembali');
+      expect(AppStrings.tr('navHome', AppLanguage.id), 'Beranda');
+      expect(AppStrings.tr('holdToRecord', AppLanguage.id), 'Tahan untuk absen');
+      expect(AppStrings.tr('language', AppLanguage.id), 'Bahasa');
+    });
+
+    test('fallback returns key when not found', () {
+      expect(AppStrings.tr('non_existing_key', AppLanguage.en), 'non_existing_key');
+    });
+  });
+
   group('Validators.emailOrId (PRD 7.6)', () {
-    test('rejects empty', () => expect(Validators.emailOrId(''), isNotNull));
+    test('rejects empty', () {
+      expect(Validators.emailOrId('', AppLanguage.en), isNotNull);
+      expect(Validators.emailOrId('', AppLanguage.id), contains('wajib diisi'));
+    });
     test('accepts employee id', () =>
         expect(Validators.emailOrId('#EMP-2024-89'), isNull));
     test('accepts valid email', () =>
@@ -18,11 +46,14 @@ void main() {
   });
 
   group('Validators.password', () {
-    test('rejects < 6', () => expect(Validators.password('123'), isNotNull));
+    test('rejects < 6', () {
+      expect(Validators.password('123', lang: AppLanguage.en), isNotNull);
+      expect(Validators.password('123', lang: AppLanguage.id), contains('minimal'));
+    });
     test('accepts >= 6', () => expect(Validators.password('123456'), isNull));
   });
 
-  group('AppDateFormatter (PRD 7.5)', () {
+  group('AppDateFormatter with locale (PRD 7.5)', () {
     test('inclusiveDays Oct 5 -> Oct 8 == 4', () {
       expect(
         AppDateFormatter.inclusiveDays(
@@ -30,12 +61,15 @@ void main() {
         4,
       );
     });
-    test('weekRangeLabel Oct 24 -> WEEK OF OCT 23 - 29', () {
-      expect(AppDateFormatter.weekRangeLabel(DateTime(2023, 10, 24)),
+    test('weekRangeLabel Oct 24 en vs id', () {
+      expect(AppDateFormatter.weekRangeLabel(DateTime(2023, 10, 24), AppLanguage.en),
           'WEEK OF OCT 23 - 29');
+      expect(AppDateFormatter.weekRangeLabel(DateTime(2023, 10, 24), AppLanguage.id),
+          'MINGGU 23 - 29 OKT');
     });
-    test('monthLabel Oct 2023', () {
-      expect(AppDateFormatter.monthLabel(DateTime(2023, 10)), 'October 2023');
+    test('monthLabel Oct 2023 en vs id', () {
+      expect(AppDateFormatter.monthLabel(DateTime(2023, 10), AppLanguage.en), 'October 2023');
+      expect(AppDateFormatter.monthLabel(DateTime(2023, 10), AppLanguage.id), 'Oktober 2023');
     });
   });
 

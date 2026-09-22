@@ -232,9 +232,10 @@ lib/
 - [x] **Core layer** dibangun langsung oleh Supervisor (delegasi @frontend-dev pertama keluar dari scope
   PRD → dibatalkan & dikerjakan sendiri demi akurasi: warna `#2A8CED`, 8 screen absensi, bukan scope lain).
 - [x] **8 screens** selesai: Splash, Login, Home, Attendance(+HoldToRecord), History, Statistics, Request(+date range picker), Profile.
-- [x] **QA**: `flutter analyze` → **No issues found**. Unit test 9/9 lulus (validators, date math, warna on-time biru).
-- [x] **Build**: `flutter build web --release` sukses (bukti seluruh widget/import terkompilasi).
-- [ ] Build APK Android / iOS — butuh Android SDK + Xcode (belum terpasang di environment ini).
+- [x] **Refinement & Localization**: Dual language system (English / Bahasa Indonesia) added via Riverpod `localeProvider` & `AppStrings`. Language switchers added to Login (top-right chip) and Profile screen (segmented control). Default language is English to match original Figma design. All UI strings, form validators, dates, and badges fully localized.
+- [x] **QA**: `flutter analyze` → **No issues found**. Unit test 21/21 lulus (termasuk localization & locale formatting).
+- [x] **Build**: `flutter build web --release` sukses.
+- [ ] Build APK Android / iOS — butuh Android SDK + Xcode.
 
 ## OPEN ITEMS
 - [x] Font: pakai **Arimo** dulu; tukar ke Liberation Sans saat file `.ttf` siap.

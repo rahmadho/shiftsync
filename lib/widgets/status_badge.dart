@@ -1,35 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/localization/app_strings.dart';
 import '../core/theme/app_colors.dart';
 
-/// Semantic status for badges (attendance + leave).
 enum BadgeStatus { onTime, late, absent, approved, pending, rejected }
 
-/// Small colored pill used across History, Requests and Statistics.
-class StatusBadge extends StatelessWidget {
+class StatusBadge extends ConsumerWidget {
   const StatusBadge({super.key, required this.status, this.label});
 
   final BadgeStatus status;
   final String? label;
 
-  ({String text, Color bg, Color fg}) get _style => switch (status) {
-        BadgeStatus.onTime =>
-          (text: 'On-time', bg: AppColors.onTimeBg, fg: AppColors.onTime),
-        BadgeStatus.late =>
-          (text: 'Late', bg: AppColors.lateBg, fg: AppColors.lateFg),
-        BadgeStatus.absent =>
-          (text: 'Absent', bg: AppColors.absentBg, fg: AppColors.absentFg),
-        BadgeStatus.approved =>
-          (text: 'Approved', bg: AppColors.approvedBg, fg: AppColors.approvedFg),
-        BadgeStatus.pending =>
-          (text: 'Pending', bg: AppColors.pendingBg, fg: AppColors.pendingFg),
-        BadgeStatus.rejected =>
-          (text: 'Rejected', bg: AppColors.rejectedBg, fg: AppColors.rejectedFg),
+  ({String defaultKey, Color bg, Color fg}) get _style => switch (status) {
+        BadgeStatus.onTime => (
+            defaultKey: 'statusOnTime',
+            bg: AppColors.onTimeBg,
+            fg: AppColors.onTime
+          ),
+        BadgeStatus.late => (
+            defaultKey: 'statusLate',
+            bg: AppColors.lateBg,
+            fg: AppColors.lateFg
+          ),
+        BadgeStatus.absent => (
+            defaultKey: 'statusAbsent',
+            bg: AppColors.absentBg,
+            fg: AppColors.absentFg
+          ),
+        BadgeStatus.approved => (
+            defaultKey: 'statusApproved',
+            bg: AppColors.approvedBg,
+            fg: AppColors.approvedFg
+          ),
+        BadgeStatus.pending => (
+            defaultKey: 'statusPending',
+            bg: AppColors.pendingBg,
+            fg: AppColors.pendingFg
+          ),
+        BadgeStatus.rejected => (
+            defaultKey: 'statusRejected',
+            bg: AppColors.rejectedBg,
+            fg: AppColors.rejectedFg
+          ),
       };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final s = _style;
+    final text = label ?? ref.tr(s.defaultKey);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -37,7 +56,7 @@ class StatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        label ?? s.text,
+        text,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,

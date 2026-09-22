@@ -1,20 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
-/// S1 — Splash / About screen.
-class SplashScreen extends StatefulWidget {
+/// S1 — Splash screen.
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -42,9 +44,9 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Colors.white, size: 44),
             ),
             const SizedBox(height: 20),
-            const Text('ShiftSync', style: AppTextStyles.h1),
+            Text(ref.tr('appName'), style: AppTextStyles.h1),
             const SizedBox(height: 6),
-            const Text('HR & Workforce Management', style: AppTextStyles.bodySm),
+            Text(ref.tr('appTagline'), style: AppTextStyles.bodySm),
             const SizedBox(height: 40),
             const SizedBox(
               width: 28,
@@ -55,8 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text('v1.0.2 © 2024 ShiftSync Inc.',
-                style: AppTextStyles.caption),
+            Text(ref.tr('appVersion'), style: AppTextStyles.caption),
           ],
         ),
       ),

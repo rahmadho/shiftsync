@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
 
   # State management
@@ -17,7 +19,7 @@ dependencies:
   # Routing
   go_router: ^14.6.2
   # Date/time formatting + locale
-  intl: ^0.19.0
+  intl: ^0.20.2
   # Date range picker (Leave Request calendar)
   syncfusion_flutter_datepicker: ^28.1.33
   # File attachment picker (Leave Request)

@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_sizes.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/primary_button.dart';
 
-/// S6 — Login screen (with branded gradient background).
+/// S6 — Login screen.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -44,10 +45,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(localeProvider);
+
     return Scaffold(
       body: Stack(
         children: [
-          // Branded gradient background
           Container(
             height: MediaQuery.of(context).size.height * 0.42,
             decoration: const BoxDecoration(
@@ -58,7 +60,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
           ),
-          // Decorative circles
           Positioned(
             top: -40,
             right: -30,
@@ -78,22 +79,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 24),
-                    // Brand mark on gradient
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(Icons.badge_outlined,
-                          color: Colors.white, size: 30),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.badge_outlined,
+                              color: Colors.white, size: 30),
+                        ),
+                        // Language switcher button
+                        ActionChip(
+                          avatar: const Icon(Icons.language, size: 16, color: Colors.white),
+                          label: Text(
+                            lang == AppLanguage.en ? 'EN' : 'ID',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          backgroundColor: Colors.white.withValues(alpha: .2),
+                          side: BorderSide.none,
+                          onPressed: () {
+                            ref.read(localeProvider.notifier).toggleLanguage();
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Welcome Back',
-                      style: TextStyle(
+                    Text(
+                      ref.tr('welcomeBack'),
+                      style: const TextStyle(
                         fontFamily: AppTextStyles.fontFamily,
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
@@ -102,13 +123,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Please sign in to view your shifts.',
+                      ref.tr('signInSubtitle'),
                       style: AppTextStyles.bodySm
                           .copyWith(color: Colors.white.withValues(alpha: .85)),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
 
-                    // Form card
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -126,26 +146,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Email or Employee ID',
+                          Text(ref.tr('emailOrId'),
                               style: AppTextStyles.label),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: _idCtrl,
-                            decoration: const InputDecoration(
-                              hintText: 'Enter your email or ID',
-                              prefixIcon: Icon(Icons.person_outline, size: 20),
+                            decoration: InputDecoration(
+                              hintText: ref.tr('emailOrIdHint'),
+                              prefixIcon: const Icon(Icons.person_outline, size: 20),
                             ),
-                            validator: Validators.emailOrId,
+                            validator: (v) => Validators.emailOrId(v, lang),
                           ),
                           const SizedBox(height: 16),
-                          const Text('Password',
+                          Text(ref.tr('password'),
                               style: AppTextStyles.label),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: _passCtrl,
                             obscureText: _obscure,
                             decoration: InputDecoration(
-                              hintText: 'Enter your password',
+                              hintText: ref.tr('passwordHint'),
                               prefixIcon:
                                   const Icon(Icons.lock_outline, size: 20),
                               suffixIcon: IconButton(
@@ -156,7 +176,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     setState(() => _obscure = !_obscure),
                               ),
                             ),
-                            validator: Validators.password,
+                            validator: (v) => Validators.password(v, lang: lang),
                           ),
                           const SizedBox(height: 8),
                           Row(
@@ -167,20 +187,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 onChanged: (v) =>
                                     setState(() => _remember = v ?? false),
                               ),
-                              const Text('Remember me',
+                              Text(ref.tr('rememberMe'),
                                   style: AppTextStyles.bodySm),
                               const Spacer(),
                               TextButton(
                                 onPressed: () {},
-                                child: const Text('Forgot Password?',
+                                child: Text(ref.tr('forgotPassword'),
                                     style:
-                                        TextStyle(color: AppColors.primary)),
+                                        const TextStyle(color: AppColors.primary)),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           PrimaryButton(
-                            label: 'Log In',
+                            label: ref.tr('logIn'),
                             loading: _loading,
                             onPressed: _submit,
                           ),
@@ -190,7 +210,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 24),
                     Center(
                       child: Text(
-                        "Don't have an account? Contact HR",
+                        ref.tr('contactHr'),
                         style: AppTextStyles.bodySm.copyWith(fontSize: 13),
                       ),
                     ),

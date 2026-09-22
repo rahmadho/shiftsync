@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_sizes.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
@@ -9,7 +10,7 @@ import '../../data/mock/mock_data.dart';
 import '../../providers/data_providers.dart';
 import '../../widgets/app_card.dart';
 
-/// S0 — My Statistics (opened from Profile). Supports month navigation.
+/// S0 — My Statistics (opened from Profile).
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
@@ -29,16 +30,15 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     final summary = MockData.summaryFor(_month);
     final flags = ref.watch(flagsProvider);
     final ratioPct = (summary.ratio * 100).round();
+    final lang = ref.watch(localeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Statistics')),
+      appBar: AppBar(title: Text(ref.tr('myStatistics'))),
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(AppSizes.screenPadding, 8,
-              AppSizes.screenPadding, 24),
+          padding: const EdgeInsets.fromLTRB(AppSizes.screenPadding, 8, AppSizes.screenPadding, 24),
           children: [
-            // Month selector
             AppCard(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
@@ -50,7 +50,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   ),
                   Expanded(
                     child: Center(
-                      child: Text(AppDateFormatter.monthLabel(_month),
+                      child: Text(AppDateFormatter.monthLabel(_month, lang),
                           style: AppTextStyles.label),
                     ),
                   ),
@@ -64,7 +64,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Attendance ratio ring
             AppCard(
               child: Row(
                 children: [
@@ -90,7 +89,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text('$ratioPct%', style: AppTextStyles.h2),
-                            Text('Score', style: AppTextStyles.caption),
+                            Text(ref.tr('score'), style: AppTextStyles.caption),
                           ],
                         ),
                       ],
@@ -101,17 +100,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('ATTENDANCE RATIO',
+                        Text(ref.tr('attendanceRatio'),
                             style: AppTextStyles.caption
                                 .copyWith(letterSpacing: 1)),
                         const SizedBox(height: 12),
-                        _legend('Present', '${summary.present} days',
+                        _legend(ref.tr('present'), '${summary.present} ${ref.tr('days')}',
                             AppColors.primary, Icons.check_circle_outline),
                         const SizedBox(height: 6),
-                        _legend('Late', '${summary.late} days',
+                        _legend(ref.tr('late'), '${summary.late} ${ref.tr('days')}',
                             AppColors.lateFg, Icons.access_time),
                         const SizedBox(height: 6),
-                        _legend('Absent', '${summary.absent} days',
+                        _legend(ref.tr('absent'), '${summary.absent} ${ref.tr('days')}',
                             AppColors.absentFg, Icons.cancel_outlined),
                       ],
                     ),
@@ -121,7 +120,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Total hours + overtime
             Row(
               children: [
                 Expanded(
@@ -134,13 +132,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                             const Icon(Icons.timer_outlined,
                                 size: 14, color: AppColors.primary),
                             const SizedBox(width: 6),
-                            Text('TOTAL HOURS',
+                            Text(ref.tr('totalHours'),
                                 style: AppTextStyles.caption
                                     .copyWith(letterSpacing: 1)),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text('${summary.totalHours}h',
+                        Text('${summary.totalHours}${ref.tr('hoursUnit')}',
                             style: AppTextStyles.h1),
                       ],
                     ),
@@ -157,13 +155,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                             const Icon(Icons.more_time,
                                 size: 14, color: AppColors.lateFg),
                             const SizedBox(width: 6),
-                            Text('OVERTIME',
+                            Text(ref.tr('overtime'),
                                 style: AppTextStyles.caption
                                     .copyWith(letterSpacing: 1)),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text('${summary.overtimeHours}h',
+                        Text('${summary.overtimeHours}${ref.tr('hoursUnit')}',
                             style: AppTextStyles.h1),
                       ],
                     ),
@@ -173,7 +171,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Late & Early leave — shown in HOURS (not days), with icons
             Row(
               children: [
                 Expanded(
@@ -186,17 +183,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                             const Icon(Icons.access_time,
                                 size: 14, color: AppColors.lateFg),
                             const SizedBox(width: 6),
-                            Text('TERLAMBAT',
+                            Text(ref.tr('lateHoursLabel'),
                                 style: AppTextStyles.caption
                                     .copyWith(letterSpacing: 1)),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text('${_fmt(summary.lateHours)} jam',
+                        Text('${_fmt(summary.lateHours)} ${ref.tr('hoursWord')}',
                             style: AppTextStyles.h1
-                                .copyWith(color: AppColors.lateFg, fontSize: 22)),
+                                .copyWith(color: AppColors.lateFg, fontSize: 20)),
                         const SizedBox(height: 2),
-                        Text('Total keterlambatan',
+                        Text(ref.tr('totalLateDesc'),
                             style: AppTextStyles.caption),
                       ],
                     ),
@@ -213,17 +210,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                             const Icon(Icons.directions_run,
                                 size: 14, color: AppColors.absentFg),
                             const SizedBox(width: 6),
-                            Text('PULANG CEPAT',
+                            Text(ref.tr('earlyLeaveLabel'),
                                 style: AppTextStyles.caption
                                     .copyWith(letterSpacing: 1)),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text('${_fmt(summary.earlyLeaveHours)} jam',
+                        Text('${_fmt(summary.earlyLeaveHours)} ${ref.tr('hoursWord')}',
                             style: AppTextStyles.h1.copyWith(
-                                color: AppColors.absentFg, fontSize: 22)),
+                                color: AppColors.absentFg, fontSize: 20)),
                         const SizedBox(height: 2),
-                        Text('Total pulang cepat',
+                        Text(ref.tr('totalEarlyDesc'),
                             style: AppTextStyles.caption),
                       ],
                     ),
@@ -233,7 +230,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Encouragement banner
             AppCard(
               color: AppColors.onTimeBg,
               child: Row(
@@ -245,11 +241,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Great job!', style: AppTextStyles.label),
+                        Text(ref.tr('greatJob'), style: AppTextStyles.label),
                         const SizedBox(height: 2),
                         Text(
-                          'Your punctuality has improved by 5% compared to '
-                          'last month. Keep it up!',
+                          ref.tr('encouragementMsg'),
                           style: AppTextStyles.bodySm,
                         ),
                       ],
@@ -263,11 +258,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Recent Flags', style: AppTextStyles.h2),
+                Text(ref.tr('recentFlags'), style: AppTextStyles.h2),
                 TextButton(
                   onPressed: () {},
-                  child: const Text('View All',
-                      style: TextStyle(color: AppColors.primary)),
+                  child: Text(ref.tr('viewAll'),
+                      style: const TextStyle(color: AppColors.primary)),
                 ),
               ],
             ),
@@ -308,7 +303,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     );
   }
 
-  /// Format hours without trailing .0 (e.g. 1.5 -> "1.5", 2.0 -> "2").
   static String _fmt(double h) =>
       h == h.roundToDouble() ? h.toInt().toString() : h.toString();
 

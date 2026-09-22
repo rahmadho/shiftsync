@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 
+import '../../core/constants/app_sizes.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
@@ -46,7 +48,7 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memilih file')),
+        SnackBar(content: Text(ref.tr('filePickFailed'))),
       );
     }
   }
@@ -69,7 +71,7 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
   void _submit() {
     if (_start == null || _end == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date range')),
+        SnackBar(content: Text(ref.tr('selectDateRangePrompt'))),
       );
       return;
     }
@@ -86,52 +88,53 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
       _start = null;
       _end = null;
       _reasonCtrl.clear();
+      _attachmentName = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Leave request submitted')),
+      SnackBar(content: Text(ref.tr('requestSubmitted'))),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final requests = ref.watch(leaveRequestsProvider);
+    final lang = ref.watch(localeProvider);
     final duration = (_start != null && _end != null)
         ? AppDateFormatter.inclusiveDays(_start!, _end!)
         : 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Leave Request')),
+      appBar: AppBar(title: Text(ref.tr('leaveRequest'))),
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          padding: const EdgeInsets.fromLTRB(AppSizes.screenPadding, 8, AppSizes.screenPadding, 24),
           children: [
-            const Text('Leave Type', style: AppTextStyles.label),
+            Text(ref.tr('leaveType'), style: AppTextStyles.label),
             const SizedBox(height: 8),
             DropdownButtonFormField<LeaveType>(
               value: _type,
               decoration: const InputDecoration(),
-              items: const [
+              items: [
                 DropdownMenuItem(
-                    value: LeaveType.sick, child: Text('Sick Leave')),
+                    value: LeaveType.sick, child: Text(ref.tr('sickLeave'))),
                 DropdownMenuItem(
-                    value: LeaveType.annual, child: Text('Annual Leave')),
+                    value: LeaveType.annual, child: Text(ref.tr('annualLeave'))),
                 DropdownMenuItem(
-                    value: LeaveType.personal, child: Text('Personal')),
+                    value: LeaveType.personal, child: Text(ref.tr('personalLeave'))),
                 DropdownMenuItem(
-                    value: LeaveType.unexcused, child: Text('Unexcused')),
+                    value: LeaveType.unexcused, child: Text(ref.tr('unexcusedLeave'))),
               ],
               onChanged: (v) => setState(() => _type = v ?? LeaveType.sick),
             ),
             const SizedBox(height: 16),
 
-            // Duration summary
             Row(
               children: [
-                const Text('Duration', style: AppTextStyles.label),
+                Text(ref.tr('duration'), style: AppTextStyles.label),
                 const Spacer(),
                 Text(
-                  duration > 0 ? '$duration Days' : 'Select a range',
+                  duration > 0 ? '$duration ${ref.tr('days')}' : ref.tr('selectRange'),
                   style: AppTextStyles.bodySm
                       .copyWith(fontWeight: FontWeight.w600),
                 ),
@@ -147,9 +150,9 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('From', style: AppTextStyles.caption),
+                          Text(ref.tr('from'), style: AppTextStyles.caption),
                           const SizedBox(height: 2),
-                          Text(AppDateFormatter.shortDate(_start!),
+                          Text(AppDateFormatter.shortDate(_start!, lang),
                               style: AppTextStyles.label),
                         ],
                       ),
@@ -162,9 +165,9 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('To', style: AppTextStyles.caption),
+                          Text(ref.tr('to'), style: AppTextStyles.caption),
                           const SizedBox(height: 2),
-                          Text(AppDateFormatter.shortDate(_end!),
+                          Text(AppDateFormatter.shortDate(_end!, lang),
                               style: AppTextStyles.label),
                         ],
                       ),
@@ -174,7 +177,6 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
               ),
             const SizedBox(height: 12),
 
-            // Date range picker calendar (white background)
             AppCard(
               color: Colors.white,
               padding: const EdgeInsets.all(8),
@@ -218,8 +220,7 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Document attachment
-            const Text('Lampiran Dokumen', style: AppTextStyles.label),
+            Text(ref.tr('attachment'), style: AppTextStyles.label),
             const SizedBox(height: 8),
             AppCard(
               padding: const EdgeInsets.all(12),
@@ -230,7 +231,7 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      _attachmentName ?? 'Lampirkan surat/dokumen (PDF/JPG)',
+                      _attachmentName ?? ref.tr('attachmentHint'),
                       style: AppTextStyles.bodySm.copyWith(
                         color: _attachmentName != null
                             ? AppColors.textPrimary
@@ -240,36 +241,40 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
                   ),
                   TextButton(
                     onPressed: _pickAttachment,
-                    child: Text(_attachmentName != null ? 'Ganti' : 'Pilih',
-                        style: const TextStyle(color: AppColors.primary)),
+                    child: Text(
+                      _attachmentName != null ? ref.tr('changeFile') : ref.tr('chooseFile'),
+                      style: const TextStyle(color: AppColors.primary),
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Reason', style: AppTextStyles.label),
+
+            Text(ref.tr('reason'), style: AppTextStyles.label),
             const SizedBox(height: 8),
             TextField(
               controller: _reasonCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'Please describe the reason for your leave...',
+              decoration: InputDecoration(
+                hintText: ref.tr('reasonHint'),
               ),
             ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _submit,
-              child: const Text('Submit Request'),
+              child: Text(ref.tr('submitRequest')),
             ),
             const SizedBox(height: 24),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Recent Requests', style: AppTextStyles.h2),
+                Text(ref.tr('recentRequests'), style: AppTextStyles.h2),
                 TextButton(
                   onPressed: () {},
-                  child: const Text('View All',
-                      style: TextStyle(color: AppColors.primary)),
+                  child: Text(ref.tr('viewAll'),
+                      style: const TextStyle(color: AppColors.primary)),
                 ),
               ],
             ),
@@ -292,7 +297,7 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
   }
 }
 
-class _RequestTile extends StatelessWidget {
+class _RequestTile extends ConsumerWidget {
   const _RequestTile({required this.request});
 
   final LeaveRequest request;
@@ -304,16 +309,24 @@ class _RequestTile extends StatelessWidget {
       };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(localeProvider);
     final sameDay = request.startDate == request.endDate;
     final range = sameDay
-        ? AppDateFormatter.shortDate(request.startDate)
-        : '${AppDateFormatter.shortDate(request.startDate)} - '
-            '${AppDateFormatter.shortDate(request.endDate)}';
+        ? AppDateFormatter.shortDate(request.startDate, lang)
+        : '${AppDateFormatter.shortDate(request.startDate, lang)} - '
+            '${AppDateFormatter.shortDate(request.endDate, lang)}';
+
+    final label = switch (request.type) {
+      LeaveType.sick => ref.tr('sickLeave'),
+      LeaveType.annual => ref.tr('annualLeave'),
+      LeaveType.personal => ref.tr('personalLeave'),
+      LeaveType.unexcused => ref.tr('unexcusedLeave'),
+    };
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(request.typeLabel, style: AppTextStyles.label),
+      title: Text(label, style: AppTextStyles.label),
       subtitle: Text(range, style: AppTextStyles.caption),
       trailing: StatusBadge(status: _badge),
     );

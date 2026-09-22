@@ -2,26 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_sizes.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/data_providers.dart';
 import '../../widgets/app_card.dart';
 
-/// S5 — My Profile (+ entry to My Statistics).
+/// S5 — My Profile (+ Language switcher & Change Password).
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final currentLang = ref.watch(localeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Profile')),
+      appBar: AppBar(title: Text(ref.tr('myProfile'))),
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          padding: const EdgeInsets.fromLTRB(AppSizes.screenPadding, 8, AppSizes.screenPadding, 24),
           children: [
             AppCard(
               child: Column(
@@ -41,12 +44,12 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _InfoTile(
-                            label: 'Department', value: user.department),
+                            label: ref.tr('department'), value: user.department),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _InfoTile(
-                            label: 'Shift', value: user.shiftLabel),
+                            label: ref.tr('shiftLabel'), value: user.shiftLabel),
                       ),
                     ],
                   ),
@@ -54,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Text('ACCOUNT SETTINGS',
+            Text(ref.tr('accountSettings'),
                 style: AppTextStyles.caption.copyWith(letterSpacing: 1)),
             const SizedBox(height: 8),
             AppCard(
@@ -63,31 +66,52 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   _SettingTile(
                     icon: Icons.bar_chart,
-                    label: 'My Statistics',
+                    label: ref.tr('myStatistics'),
                     onTap: () => context.push('/statistics'),
+                  ),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  // Language Setting Tile
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    leading: const Icon(Icons.language, size: 20, color: AppColors.textPrimary),
+                    title: Text(ref.tr('language'), style: AppTextStyles.label),
+                    trailing: SegmentedButton<AppLanguage>(
+                      segments: const [
+                        ButtonSegment(value: AppLanguage.en, label: Text('EN', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: AppLanguage.id, label: Text('ID', style: TextStyle(fontSize: 11))),
+                      ],
+                      selected: {currentLang},
+                      onSelectionChanged: (newSelection) {
+                        ref.read(localeProvider.notifier).setLanguage(newSelection.first);
+                      },
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _SettingTile(
                     icon: Icons.edit_outlined,
-                    label: 'Edit Profile',
+                    label: ref.tr('editProfile'),
                     onTap: () {},
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _SettingTile(
                     icon: Icons.lock_outline,
-                    label: 'Change Password',
+                    label: ref.tr('changePassword'),
                     onTap: () => context.push('/change-password'),
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _SettingTile(
                     icon: Icons.notifications_none,
-                    label: 'Notifications',
+                    label: ref.tr('notifications'),
                     onTap: () {},
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _SettingTile(
                     icon: Icons.logout,
-                    label: 'Log Out',
+                    label: ref.tr('logOut'),
                     color: AppColors.absentFg,
                     onTap: () {
                       ref.read(authProvider.notifier).logout();

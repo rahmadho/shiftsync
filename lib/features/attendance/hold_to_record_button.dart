@@ -3,18 +3,19 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Press-and-hold button: fires [onComplete] after being held for [duration].
-/// Releasing early resets progress. Prevents double-submit while holding.
 class HoldToRecordButton extends StatefulWidget {
   const HoldToRecordButton({
     super.key,
     required this.onComplete,
     this.duration = const Duration(milliseconds: 1500),
-    this.label = 'Hold to record',
+    this.label,
+    this.recordedLabel,
   });
 
   final VoidCallback onComplete;
   final Duration duration;
-  final String label;
+  final String? label;
+  final String? recordedLabel;
 
   @override
   State<HoldToRecordButton> createState() => _HoldToRecordButtonState();
@@ -58,6 +59,9 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
 
   @override
   Widget build(BuildContext context) {
+    final defaultLabel = widget.label ?? 'Hold to record';
+    final doneLabel = widget.recordedLabel ?? 'Recorded';
+
     return GestureDetector(
       onTapDown: (_) => _start(),
       onTapUp: (_) => _cancel(),
@@ -71,7 +75,6 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Track
                 SizedBox(
                   width: 200,
                   height: 200,
@@ -83,7 +86,6 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
                         AppColors.border.withValues(alpha: .5)),
                   ),
                 ),
-                // Progress
                 SizedBox(
                   width: 200,
                   height: 200,
@@ -96,7 +98,6 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
                         const AlwaysStoppedAnimation(AppColors.primary),
                   ),
                 ),
-                // Inner circle
                 Container(
                   width: 150,
                   height: 150,
@@ -113,7 +114,7 @@ class _HoldToRecordButtonState extends State<HoldToRecordButton>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
-                          _fired ? 'Recorded' : widget.label,
+                          _fired ? doneLabel : defaultLabel,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
