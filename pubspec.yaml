@@ -20,6 +20,8 @@ dependencies:
   intl: ^0.19.0
   # Date range picker (Leave Request calendar)
   syncfusion_flutter_datepicker: ^28.1.33
+  # File attachment picker (Leave Request)
+  file_picker: ^8.1.7
 
 dev_dependencies:
   flutter_test:

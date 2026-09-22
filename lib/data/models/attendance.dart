@@ -47,6 +47,8 @@ class AttendanceSummary {
     required this.totalHours,
     required this.overtimeHours,
     required this.ratio,
+    this.lateHours = 0,
+    this.earlyLeaveHours = 0,
   });
 
   final int present;
@@ -54,7 +56,11 @@ class AttendanceSummary {
   final int absent;
   final int totalHours;
   final int overtimeHours;
-  final double ratio; // 0..1
+  final double ratio;
+  /// Total hours late (sum of lateness durations), not day count.
+  final double lateHours;
+  /// Total hours of early leave (pulang cepat).
+  final double earlyLeaveHours;
 
   int get totalDays => present + late + absent;
 
@@ -66,6 +72,8 @@ class AttendanceSummary {
         totalHours: json['total_hours'] as int,
         overtimeHours: json['overtime'] as int,
         ratio: (json['ratio'] as num).toDouble(),
+        lateHours: (json['late_hours'] as num?)?.toDouble() ?? 0,
+        earlyLeaveHours: (json['early_leave_hours'] as num?)?.toDouble() ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -75,5 +83,7 @@ class AttendanceSummary {
         'total_hours': totalHours,
         'overtime': overtimeHours,
         'ratio': ratio,
+        'late_hours': lateHours,
+        'early_leave_hours': earlyLeaveHours,
       };
 }

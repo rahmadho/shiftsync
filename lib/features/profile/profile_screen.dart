@@ -76,7 +76,7 @@ class ProfileScreen extends ConsumerWidget {
                   _SettingTile(
                     icon: Icons.lock_outline,
                     label: 'Change Password',
-                    onTap: () {},
+                    onTap: () => context.push('/change-password'),
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _SettingTile(

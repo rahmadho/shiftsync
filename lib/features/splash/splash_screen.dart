@@ -46,6 +46,15 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 6),
             const Text('HR & Workforce Management', style: AppTextStyles.bodySm),
             const SizedBox(height: 40),
+            const SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
             const Text('v1.0.2 © 2024 ShiftSync Inc.',
                 style: AppTextStyles.caption),
           ],

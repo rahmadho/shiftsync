@@ -36,10 +36,53 @@ abstract final class MockData {
     totalHours: 160,
     overtimeHours: 4,
     ratio: 0.95,
+    lateHours: 1.5,
+    earlyLeaveHours: 2.0,
   );
+
+  /// Monthly summaries keyed by "yyyy-MM". Falls back to none if missing.
+  static const Map<String, AttendanceSummary> summariesByMonth = {
+    '2023-10': summaryOctober,
+    '2023-09': AttendanceSummary(
+      present: 18,
+      late: 3,
+      absent: 1,
+      totalHours: 152,
+      overtimeHours: 2,
+      ratio: 0.82,
+      lateHours: 3.0,
+      earlyLeaveHours: 4.5,
+    ),
+    '2023-08': AttendanceSummary(
+      present: 21,
+      late: 1,
+      absent: 0,
+      totalHours: 168,
+      overtimeHours: 6,
+      ratio: 0.96,
+      lateHours: 0.5,
+      earlyLeaveHours: 1.0,
+    ),
+  };
+
+  /// Look up a summary for a given month, defaulting to an empty one.
+  static AttendanceSummary summaryFor(DateTime month) {
+    final key =
+        '${month.year}-${month.month.toString().padLeft(2, '0')}';
+    return summariesByMonth[key] ??
+        const AttendanceSummary(
+          present: 0,
+          late: 0,
+          absent: 0,
+          totalHours: 0,
+          overtimeHours: 0,
+          ratio: 0,
+        );
+  }
 
   /// History entries (newest first). Grouped by week in the UI.
   static List<Attendance> history() => [
+        // ---------- OCTOBER 2023 ----------
         // WEEK OF OCT 23 - 29
         Attendance(
           id: 'a24',
@@ -74,6 +117,51 @@ abstract final class MockData {
           status: AttendanceStatus.onTime,
           checkInAt: DateTime(2023, 10, 19, 8, 45),
           checkOutAt: DateTime(2023, 10, 19, 17, 15),
+        ),
+        // WEEK OF OCT 2 - 8
+        Attendance(
+          id: 'a3',
+          date: DateTime(2023, 10, 3),
+          status: AttendanceStatus.late,
+          checkInAt: DateTime(2023, 10, 3, 9, 30),
+          checkOutAt: DateTime(2023, 10, 3, 17, 0),
+        ),
+
+        // ---------- SEPTEMBER 2023 ----------
+        Attendance(
+          id: 's28',
+          date: DateTime(2023, 9, 28),
+          status: AttendanceStatus.absent,
+        ),
+        Attendance(
+          id: 's27',
+          date: DateTime(2023, 9, 27),
+          status: AttendanceStatus.onTime,
+          checkInAt: DateTime(2023, 9, 27, 8, 50),
+          checkOutAt: DateTime(2023, 9, 27, 17, 5),
+        ),
+        Attendance(
+          id: 's26',
+          date: DateTime(2023, 9, 26),
+          status: AttendanceStatus.onTime,
+          checkInAt: DateTime(2023, 9, 26, 8, 55),
+          checkOutAt: DateTime(2023, 9, 26, 17, 0),
+        ),
+
+        // ---------- AUGUST 2023 ----------
+        Attendance(
+          id: 'g01',
+          date: DateTime(2023, 8, 1),
+          status: AttendanceStatus.onTime,
+          checkInAt: DateTime(2023, 8, 1, 8, 58),
+          checkOutAt: DateTime(2023, 8, 1, 17, 2),
+        ),
+        Attendance(
+          id: 'g02',
+          date: DateTime(2023, 8, 2),
+          status: AttendanceStatus.late,
+          checkInAt: DateTime(2023, 8, 2, 9, 20),
+          checkOutAt: DateTime(2023, 8, 2, 16, 30),
         ),
       ];
 

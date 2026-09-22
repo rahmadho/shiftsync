@@ -5,6 +5,7 @@ import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/profile/change_password_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/request/leave_request_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -21,6 +22,9 @@ final appRouter = GoRouter(
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/attendance', builder: (_, __) => const AttendanceScreen()),
     GoRoute(path: '/statistics', builder: (_, __) => const StatisticsScreen()),
+    GoRoute(
+        path: '/change-password',
+        builder: (_, __) => const ChangePasswordScreen()),
 
     // Bottom-nav shell: Home · Request · History · Profile
     StatefulShellRoute.indexedStack(

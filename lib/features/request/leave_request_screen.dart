@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
@@ -24,11 +25,30 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
   DateTime? _start;
   DateTime? _end;
   final _reasonCtrl = TextEditingController();
+  String? _attachmentName;
 
   @override
   void dispose() {
     _reasonCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAttachment() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+      if (result != null && result.files.isNotEmpty) {
+        if (!mounted) return;
+        setState(() => _attachmentName = result.files.single.name);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memilih file')),
+      );
+    }
   }
 
   void _onSelectionChanged(DateRangePickerSelectionChangedArgs args) {
@@ -154,12 +174,14 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
               ),
             const SizedBox(height: 12),
 
-            // Date range picker calendar
+            // Date range picker calendar (white background)
             AppCard(
+              color: Colors.white,
               padding: const EdgeInsets.all(8),
               child: SizedBox(
                 height: 320,
                 child: SfDateRangePicker(
+                  backgroundColor: Colors.white,
                   selectionMode: DateRangePickerSelectionMode.range,
                   onSelectionChanged: _onSelectionChanged,
                   initialDisplayDate: DateTime(2023, 10, 1),
@@ -173,8 +195,55 @@ class _LeaveRequestScreenState extends ConsumerState<LeaveRequestScreen> {
                   todayHighlightColor: AppColors.primary,
                   headerStyle: const DateRangePickerHeaderStyle(
                     textAlign: TextAlign.center,
+                    backgroundColor: Colors.white,
+                    textStyle: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  monthCellStyle: const DateRangePickerMonthCellStyle(
+                    textStyle: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: AppColors.textPrimary,
+                    ),
+                    todayTextStyle: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Document attachment
+            const Text('Lampiran Dokumen', style: AppTextStyles.label),
+            const SizedBox(height: 8),
+            AppCard(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const Icon(Icons.attach_file,
+                      size: 20, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _attachmentName ?? 'Lampirkan surat/dokumen (PDF/JPG)',
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: _attachmentName != null
+                            ? AppColors.textPrimary
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _pickAttachment,
+                    child: Text(_attachmentName != null ? 'Ganti' : 'Pilih',
+                        style: const TextStyle(color: AppColors.primary)),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),

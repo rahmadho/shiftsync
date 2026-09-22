@@ -9,16 +9,37 @@ import '../../providers/data_providers.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/status_badge.dart';
 
-/// S3 — Attendance History.
-class HistoryScreen extends ConsumerWidget {
+/// S3 — Attendance History (with month selector).
+class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(attendanceSummaryProvider);
-    final history = ref.watch(attendanceHistoryProvider);
+  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
+}
 
-    // Group by ISO week start (Monday).
+class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+  // Selected month (starts at October 2023, the design's month).
+  DateTime _month = DateTime(2023, 10);
+
+  void _shiftMonth(int delta) {
+    setState(() => _month = DateTime(_month.year, _month.month + delta));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final allHistory = ref.watch(attendanceHistoryProvider);
+
+    // Filter entries by selected month.
+    final history = allHistory
+        .where((a) => a.date.year == _month.year && a.date.month == _month.month)
+        .toList();
+
+    // Summary for the month.
+    final present = history.where((a) => a.status == AttendanceStatus.onTime).length;
+    final late = history.where((a) => a.status == AttendanceStatus.late).length;
+    final absent = history.where((a) => a.status == AttendanceStatus.absent).length;
+
+    // Group by ISO week (Monday).
     final groups = <DateTime, List<Attendance>>{};
     for (final a in history) {
       final monday =
@@ -34,50 +55,55 @@ class HistoryScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
-            const Text('October 2023', style: AppTextStyles.bodySm),
-            const SizedBox(height: 12),
+            // Month selector
+            _MonthSelector(
+              label: AppDateFormatter.monthLabel(_month),
+              onPrev: () => _shiftMonth(-1),
+              onNext: () => _shiftMonth(1),
+            ),
+            const SizedBox(height: 16),
+
+            // Recap: label on top, number, "Days" below
             Row(
               children: [
-                _SummaryCard(
-                    value: summary.present,
-                    label: 'Present',
-                    color: AppColors.primary),
+                _RecapCard(
+                    label: 'Present', value: present, color: AppColors.primary),
                 const SizedBox(width: 12),
-                _SummaryCard(
-                    value: summary.late,
-                    label: 'Late',
-                    color: AppColors.lateFg),
+                _RecapCard(
+                    label: 'Late', value: late, color: AppColors.lateFg),
                 const SizedBox(width: 12),
-                _SummaryCard(
-                    value: summary.absent,
-                    label: 'Absent',
-                    color: AppColors.absentFg),
+                _RecapCard(
+                    label: 'Absent', value: absent, color: AppColors.absentFg),
               ],
             ),
             const SizedBox(height: 24),
-            for (final k in keys) ...[
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8, top: 4),
-                child: Text(
-                  AppDateFormatter.weekRangeLabel(k),
-                  style: AppTextStyles.caption.copyWith(
-                      letterSpacing: 1, fontWeight: FontWeight.w600),
+
+            if (history.isEmpty)
+              _EmptyState(month: AppDateFormatter.monthLabel(_month))
+            else
+              for (final k in keys) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8, top: 4),
+                  child: Text(
+                    AppDateFormatter.weekRangeLabel(k),
+                    style: AppTextStyles.caption.copyWith(
+                        letterSpacing: 1, fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-              AppCard(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < groups[k]!.length; i++) ...[
-                      _AttendanceRow(entry: groups[k]![i]),
-                      if (i != groups[k]!.length - 1)
-                        const Divider(height: 1, indent: 16, endIndent: 16),
+                AppCard(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < groups[k]!.length; i++) ...[
+                        _AttendanceRow(entry: groups[k]![i]),
+                        if (i != groups[k]!.length - 1)
+                          const Divider(height: 1, indent: 16, endIndent: 16),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+              ],
           ],
         ),
       ),
@@ -87,27 +113,96 @@ class HistoryScreen extends ConsumerWidget {
   static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard(
-      {required this.value, required this.label, required this.color});
+class _MonthSelector extends StatelessWidget {
+  const _MonthSelector({
+    required this.label,
+    required this.onPrev,
+    required this.onNext,
+  });
 
-  final int value;
   final String label;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onPrev,
+            icon: const Icon(Icons.chevron_left),
+            color: AppColors.textPrimary,
+          ),
+          Expanded(
+            child: Center(
+              child: Text(label, style: AppTextStyles.label),
+            ),
+          ),
+          IconButton(
+            onPressed: onNext,
+            icon: const Icon(Icons.chevron_right),
+            color: AppColors.textPrimary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Recap card: label on top, big number, "Days" below.
+class _RecapCard extends StatelessWidget {
+  const _RecapCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final int value;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: AppCard(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: Column(
           children: [
+            Text(label, style: AppTextStyles.caption),
+            const SizedBox(height: 6),
             Text('$value',
                 style: AppTextStyles.h1.copyWith(color: color, fontSize: 26)),
             const SizedBox(height: 2),
-            Text(label, style: AppTextStyles.caption),
+            Text('Days', style: AppTextStyles.caption),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.month});
+
+  final String month;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        children: [
+          const Icon(Icons.event_busy_outlined,
+              size: 48, color: AppColors.textMuted),
+          const SizedBox(height: 12),
+          Text('Tidak ada data absensi',
+              style: AppTextStyles.label.copyWith(color: AppColors.textMuted)),
+          const SizedBox(height: 4),
+          Text('Belum ada catatan untuk $month',
+              style: AppTextStyles.caption),
+        ],
       ),
     );
   }
@@ -142,24 +237,19 @@ class _AttendanceRow extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Row(
-                children: [
-                  _Time(
-                      value: hasTimes
-                          ? AppDateFormatter.hhmm(entry.checkInAt!)
-                          : '-- : --',
-                      caption: hasTimes ? 'AM' : ''),
-                  const SizedBox(width: 14),
-                  _Time(
-                      value: hasTimes
-                          ? AppDateFormatter.hhmm(entry.checkOutAt!)
-                          : '-- : --',
-                      caption: hasTimes ? 'PM' : ''),
-                ],
-              ),
+              _Time(
+                  value: hasTimes
+                      ? AppDateFormatter.hhmm(entry.checkInAt!)
+                      : '-- : --',
+                  caption: hasTimes ? 'AM' : ''),
+              const SizedBox(width: 14),
+              _Time(
+                  value: hasTimes
+                      ? AppDateFormatter.hhmm(entry.checkOutAt!)
+                      : '-- : --',
+                  caption: hasTimes ? 'PM' : ''),
             ],
           ),
         ],
