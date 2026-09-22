@@ -1,0 +1,42 @@
+name: shiftsync
+description: "ShiftSync — HR & Workforce Management mobile app (attendance, history, leave requests, profile)."
+publish_to: 'none'
+
+version: 1.0.2+3
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  # Routing
+  go_router: ^14.6.2
+  # Date/time formatting + locale
+  intl: ^0.19.0
+  # Date range picker (Leave Request calendar)
+  syncfusion_flutter_datepicker: ^28.1.33
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Arimo
+      fonts:
+        - asset: assets/fonts/Arimo-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Arimo-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Arimo-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Arimo-Bold.ttf
+          weight: 700
