@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+
+import 'native_integrity.dart';
 
 /// Severity of a detected integrity issue.
 enum ThreatLevel { none, warning, critical }
@@ -85,19 +86,19 @@ class SecurityService {
     var isRooted = false;
     var isJailbroken = false;
     var developerMode = false;
-    // Emulator detection: unreliable without a dedicated plugin, so we treat
-    // kDebugMode as an emulator only in debug builds and never block there.
     var isEmulator = false;
 
     try {
       if (Platform.isAndroid) {
-        isRooted = await FlutterJailbreakDetection.jailbroken;
-        developerMode = await FlutterJailbreakDetection.developerMode;
+        isRooted = await NativeIntegrity.isRooted();
+        developerMode = await NativeIntegrity.isDeveloperMode();
+        isEmulator = await NativeIntegrity.isEmulator();
       } else if (Platform.isIOS) {
-        isJailbroken = await FlutterJailbreakDetection.jailbroken;
+        isJailbroken = await NativeIntegrity.isJailbroken();
+        isEmulator = await NativeIntegrity.isEmulator();
       }
     } catch (_) {
-      // Plugin unavailable — treat as non-fatal.
+      // Native channel unavailable — treat as non-fatal.
     }
 
     String? ssid;

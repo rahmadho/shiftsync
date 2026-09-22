@@ -28,8 +28,6 @@ dependencies:
   image_picker: ^1.1.2
   # Location + mock-location detection (Phase 1 anti-fraud)
   geolocator: ^13.0.2
-  # Root/jailbreak + emulator detection (Phase 2 anti-fraud)
-  flutter_jailbreak_detection: ^1.10.0
   # WiFi BSSID / SSID (Phase 2 office-network check)
   network_info_plus: ^6.1.3
 
