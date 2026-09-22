@@ -203,20 +203,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              Checkbox(
-                                value: _remember,
-                                activeColor: AppColors.primary,
-                                onChanged: (v) =>
-                                    setState(() => _remember = v ?? false),
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Checkbox(
+                                  value: _remember,
+                                  activeColor: AppColors.primary,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  onChanged: (v) =>
+                                      setState(() => _remember = v ?? false),
+                                ),
                               ),
-                              Text(ref.tr('rememberMe'),
-                                  style: AppTextStyles.bodySm),
-                              const Spacer(),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  ref.tr('rememberMe'),
+                                  style: AppTextStyles.bodySm,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                               TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 0),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
                                 onPressed: () {},
-                                child: Text(ref.tr('forgotPassword'),
-                                    style:
-                                        const TextStyle(color: AppColors.primary)),
+                                child: Text(
+                                  ref.tr('forgotPassword'),
+                                  style: const TextStyle(
+                                      color: AppColors.primary, fontSize: 13),
+                                ),
                               ),
                             ],
                           ),
